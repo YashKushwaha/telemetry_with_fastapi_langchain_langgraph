@@ -3,7 +3,7 @@ from fastapi import FastAPI
 from opentelemetry import trace
 from opentelemetry.sdk.resources import Resource
 from opentelemetry.sdk.trace import TracerProvider
-from opentelemetry.sdk.trace.export import BatchSpanProcessor
+from opentelemetry.sdk.trace.export import BatchSpanProcessor, SimpleSpanProcessor
 from opentelemetry.exporter.otlp.proto.http.trace_exporter import OTLPSpanExporter
 from opentelemetry.sdk.trace.export import ConsoleSpanExporter
 
@@ -37,7 +37,10 @@ exporter = OTLPSpanExporter(
     },
 )
 
-provider.add_span_processor(BatchSpanProcessor(exporter))
+console_exporter = ConsoleSpanExporter()
+
+provider.add_span_processor(SimpleSpanProcessor(exporter))
+provider.add_span_processor(SimpleSpanProcessor(console_exporter))
 
 trace.set_tracer_provider(provider)
 tracer = trace.get_tracer(__name__)
@@ -48,11 +51,5 @@ def create_app() -> FastAPI:
 
     app.include_router(health_and_root.router)
     app.include_router(chat.router)
-
-    @app.get("/test-trace")
-    async def test_trace():
-        with tracer.start_as_current_span("test-span") as span:
-            span.set_attribute("foo", "bar")
-            return {"ok": True}
 
     return app

@@ -2,7 +2,7 @@
 
 from langgraph.graph import StateGraph, START, END
 from typing import TypedDict
-
+from time import sleep
 from opentelemetry import trace
 tracer = trace.get_tracer(__name__)
 
@@ -14,8 +14,14 @@ async def process_input(state: State) -> State:
     # Process the input and return the next state
     processed_input = state["input"].upper()  # Example processing
     current_span = trace.get_current_span()
-    current_span.set_attribute("process_input.input", state["input"])
+    attributes ={   'input.value': state["input"], 'output.value': processed_input,
+                    'openinference.span.kind': 'LC_NODE', 'openinference.workflow.name': 'process_input',
+                    }
+
+
+    current_span.set_attributes(attributes)
     current_span.add_event("Inside process_input function")
+    sleep(2)  # Simulate some delay
     return {"input": processed_input}
 
 
